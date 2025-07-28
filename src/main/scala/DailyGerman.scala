@@ -20,23 +20,23 @@ object DailyGerman {
     texts.zip(audios).map(CardInfo.apply)  
   }
 
-  def addClozeFromDailyGerman(ip: String, url: String) = {
+  def addClozeFromDailyGerman(url: String): Unit = {
     val cards = DailyGerman.getWebInfo(url)
     
     cards.foreach { card =>
-      val fileName = card.mp3Link.substring(card.mp3Link.lastIndexOf('/') + 1, card.mp3Link.length());
+      val fileName = card.mp3Link.substring(card.mp3Link.lastIndexOf('/') + 1, card.mp3Link.length())
       println(s"Text for the new card: ${card.text}")
       println(s"Which cloze do you wanna add (coma separated)?")
       val clozes = readLine().split(",").map(_.trim())
-      if(!clozes.filter(!_.isBlank()).isEmpty) {
+      if(clozes.exists(!_.isBlank)) {
         println(s"Which word do you wanna show?")
         val showies = readLine().split(",").map(_.trim())
-        val clozeText = (0 to clozes.size-1).foldLeft(card.text)((acc, i) => acc.replace(clozes(i), s"{{c1::${clozes(i)}::${showies.lift(i).getOrElse("")}}}"))
+        val clozeText = clozes.indices.foldLeft(card.text)((acc, i) => acc.replace(clozes(i), s"{{c1::${clozes(i)}::${showies.lift(i).getOrElse("")}}}"))
         println(s"Result cloze card will be: $clozeText")
         val note = AnkiApi.AnkiNoteInput("German", "Cloze German", 
           Map("Text" -> clozeText), List(AnkiApi.AnkiAudioUrl(card.mp3Link, fileName, List("Audio"))))
-        AnkiApi.addNote(ip, note)
-      } else  println(s"Skiping card")
+        AnkiApi.addNote(note)
+      } else  println(s"Skipping card")
       println()
       println()
     }

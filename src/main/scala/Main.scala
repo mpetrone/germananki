@@ -6,29 +6,25 @@ import scala.concurrent.Future
 import scala.concurrent.Await
 import concurrent.duration.DurationInt
 
-@main def run() = {
-  val ip = getWindowsIp()
-
-  //textToAudio(ip)
-  DailyGerman.addClozeFromDailyGerman(ip, "https://yourdailygerman.com/passive-german-english-differences/")
+@main def run(): Unit = {
+  //searchAndReplace()
+  //textToAudio()
+  DailyGerman.addClozeFromDailyGerman("https://yourdailygerman.com/borgen-leihen-meaning/")
 }
 
-def getWindowsIp(): String = {
-  val ipRegex = """\b(?:[0-9]{1,3}\.){3}[0-9]{1,3}\b""".r
-  val ip = ipRegex.findFirstIn("ip route show default".!!).getOrElse(throw Exception("IP not found!"))
-  println(s"Localhost windows ip $ip")
-  ip
+def stripHtmlTags(input: String): String = {
+  val htmlTagRegex = """<[^>]*>""".r
+  val cleaned = htmlTagRegex.replaceAllIn(input, "")
+  cleaned.replaceAll("&nbsp;", " ")
 }
 
-def searchAndReplace(ip: String) = {
-  val notesId = AnkiApi.findNotes(ip, """-sound deck:German card:Cloze -Reverse""")
-  val notesInfo = AnkiApi.getNotesInfo(ip, notesId)
+def searchAndReplace(): Unit = {
+  val notesId = AnkiApi.findNotes("""-sound deck:German card:Cloze -Reverse""")
+  val notesInfo = AnkiApi.getNotesInfo(notesId)
 
   val updateNotes: List[(AnkiNoteInfo, AnkiApi.AnkiUpdateNote)] = notesInfo
   .map { noteInfo =>
-    val newFields = noteInfo.fields.mapValues{field =>
-       field.value.replaceAll("&nbsp;", " ") 
-    }.toMap
+    val newFields = noteInfo.fields.mapValues{field => stripHtmlTags(field.value)}.toMap
     noteInfo -> AnkiApi.AnkiUpdateNote(noteInfo.noteId, noteInfo.tags, newFields, List())
   }
 
@@ -40,23 +36,23 @@ def searchAndReplace(ip: String) = {
     println("Would you like to update it? y/n")
     val answer = readLine().trim()
     if(answer == "y")
-      AnkiApi.updateNote(ip, update)
+      AnkiApi.updateNote(update)
   }
 }
 
-def textToAudio(ip: String) = {
+def textToAudio(): Unit = {
   val openIA = new OpenIA()
-  val notesId = AnkiApi.findNotes(ip, """-sound deck:German card:Cloze""")
-  val notesInfo = AnkiApi.getNotesInfo(ip, notesId)
+  val notesId = AnkiApi.findNotes("""-sound deck:German card:Cloze""")
+  val notesInfo = AnkiApi.getNotesInfo(notesId)
 
   val clozePattern = """\{\{c\d+::([^:}]+)(?:::.*?)?\}\}""".r
     
   notesInfo.foreach{ noteInfo =>
     val text = noteInfo.fields.get("Text").map(v => clozePattern.replaceAllIn(v.value, m => m.group(1))).get
-    val fileName = noteInfo.noteId.toString()
+    val fileName = noteInfo.noteId.toString
     println(s"Text to Speech for: $text")
-    Await.result(openIA.textToSpeech(fileName, text), 10.seconds)
-    val audio = List(AnkiApi.AnkiAudioPath(s"\\\\wsl.localhost\\Ubuntu\\home\\petrm\\germananki\\$fileName.mp3", fileName, List("Audio")))
+    Await.result(openIA.textToSpeech(fileName, text), 40.seconds)
+    val audio = List(AnkiApi.AnkiAudioPath(s"/Users/petrm/IdeaProjects/germananki/$fileName.mp3", fileName, List("Audio")))
     val newFields = noteInfo.fields.mapValues(_.value).toMap
     val updateNote = AnkiApi.AnkiUpdateNote(noteInfo.noteId, noteInfo.tags, newFields, audio)
 
@@ -66,9 +62,13 @@ def textToAudio(ip: String) = {
     println()
     println()
     println()
-    AnkiApi.updateNote(ip, updateNote)
-    Thread.sleep(40000)
+    AnkiApi.updateNote(updateNote)
+    Thread.sleep(10000)
   }
+
+  println()
+  println()
+  println(s"Process Finished!")
 }
 
 

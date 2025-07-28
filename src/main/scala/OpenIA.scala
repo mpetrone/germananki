@@ -17,12 +17,12 @@ import io.cequence.openaiscala.domain.settings.VoiceType._
 val API_KEY = ""
 class OpenIA() {
 
-    val logger = LoggerFactory.getLogger(this.getClass())
+    val logger: Logger = LoggerFactory.getLogger(this.getClass)
     given ec: ExecutionContext = ExecutionContext.global
     given materializer: Materializer = Materializer(ActorSystem())
-    val rawService = OpenAIServiceFactory(apiKey = API_KEY, orgId = None)
-    val adapters = OpenAIServiceAdapters.forFullService
-    val service = adapters.log(
+    private val rawService = OpenAIServiceFactory(apiKey = API_KEY, orgId = None)
+    private val adapters = OpenAIServiceAdapters.forFullService
+    private val service = adapters.log(
         rawService,
         "openAIService",
         logger.info

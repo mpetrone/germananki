@@ -9,7 +9,7 @@ import concurrent.duration.DurationInt
 @main def run(): Unit = {
   //searchAndReplace()
   //textToAudio()
-  DailyGerman.addClozeFromDailyGerman("https://yourdailygerman.com/borgen-leihen-meaning/")
+  DailyGerman.addClozeFromDailyGerman("https://yourdailygerman.com/remembering-in-german")
 }
 
 def stripHtmlTags(input: String): String = {
@@ -46,12 +46,13 @@ def textToAudio(): Unit = {
   val notesInfo = AnkiApi.getNotesInfo(notesId)
 
   val clozePattern = """\{\{c\d+::([^:}]+)(?:::.*?)?\}\}""".r
-    
+
   notesInfo.foreach{ noteInfo =>
-    val text = noteInfo.fields.get("Text").map(v => clozePattern.replaceAllIn(v.value, m => m.group(1))).get
+    val text = noteInfo.fields.get("Text")
+      .map(v => clozePattern.replaceAllIn(v.value, m => m.group(1))).get
     val fileName = noteInfo.noteId.toString
     println(s"Text to Speech for: $text")
-    Await.result(openIA.textToSpeech(fileName, text), 40.seconds)
+    Await.result(openIA.textToSpeech(fileName, text), 70.seconds)
     val audio = List(AnkiApi.AnkiAudioPath(s"/Users/petrm/IdeaProjects/germananki/$fileName.mp3", fileName, List("Audio")))
     val newFields = noteInfo.fields.mapValues(_.value).toMap
     val updateNote = AnkiApi.AnkiUpdateNote(noteInfo.noteId, noteInfo.tags, newFields, audio)

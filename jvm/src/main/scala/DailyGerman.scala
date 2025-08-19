@@ -7,6 +7,12 @@ import scala.io.StdIn.readLine
 object DailyGerman {
   case class CardInfo(text: String, mp3Link: String)
 
+  def stripHtmlTags(input: String): String = {
+    val htmlTagRegex = """<[^>]*>""".r
+    val cleaned = htmlTagRegex.replaceAllIn(input, "")
+    cleaned.replaceAll("&nbsp;", " ")
+  }
+
   def getWebInfo(url: String): List[CardInfo] = {
     val browser = JsoupBrowser()
     val doc = browser.get(url)
@@ -23,19 +29,21 @@ object DailyGerman {
         }
     }
 
-  val audios = allPostExamples.flatMap { ulElement =>
-      if (ulElement.childNodes.toSeq.length == 4) {
-          (ulElement >> elementList("li"))(2)  >?> element("source") >> attr("src")
-      } else {
-          None
-      }
-  }
+    val audios = allPostExamples.flatMap { ulElement =>
+        if (ulElement.childNodes.toSeq.length == 4) {
+            (ulElement >> elementList("li"))(2)  >?> element("source") >> attr("src")
+        } else {
+            None
+        }
+    }
 
-     if(textsWithSound.length != audios.length) {
-         throw new RuntimeException("texts and audios have different sizes, the parsing is incorrect")
-     }
+    if(textsWithSound.length != audios.length) {
+        throw new RuntimeException("texts and audios have different sizes, the parsing is incorrect")
+    }
 
-      textsWithSound.zip(audios).map(CardInfo.apply)
+    textsWithSound.zip(audios).map { case (text, mp3Link) =>
+      CardInfo(stripHtmlTags(text), mp3Link)
+    }
   }
 
   def addClozeFromDailyGerman(url: String): Unit = {

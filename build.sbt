@@ -1,7 +1,7 @@
 import sbt.Keys._
 import org.scalajs.sbtplugin.ScalaJSPlugin.autoImport._
 
-val scala3Version = "3.3.1"
+val scala3Version = "3.3.6"
 
 lazy val root = project
   .in(file("."))

@@ -13,12 +13,16 @@ import sttp.client4.fetch.FetchBackend
 object Main {
 
   private val urlVar: Var[String] = Var("")
-  private val phrasesVar: Var[List[DailyGermanPhrase]] = Var[List[DailyGermanPhrase]](List.empty)
-  private val clozeWordsVar: Var[Map[String, String]] = Var[Map[String, String]](Map.empty)
-  private val hintsVar: Var[Map[String, String]] = Var[Map[String, String]](Map.empty) // New Var for hints
+  private val phrasesVar: Var[List[DailyGermanPhrase]] =
+    Var[List[DailyGermanPhrase]](List.empty)
+  private val clozeWordsVar: Var[Map[String, String]] =
+    Var[Map[String, String]](Map.empty)
+  private val hintsVar: Var[Map[String, String]] =
+    Var[Map[String, String]](Map.empty) // New Var for hints
 
   val sentenceVar: Var[String] = Var("")
   val textToAudioClozeWordsVar: Var[String] = Var("")
+  val textToAudioClozeHintsVar: Var[String] = Var("")
 
   def getPhrases(): Unit = {
     val backend = FetchBackend()
@@ -32,7 +36,7 @@ object Main {
       case scala.util.Success(res) =>
         res.body match {
           case Right(phrases) => phrasesVar.set(phrases)
-          case Left(err) => dom.console.log(err.toString)
+          case Left(err)      => dom.console.log(err.toString)
         }
       case scala.util.Failure(err) =>
         dom.console.log(err.getMessage)
@@ -40,10 +44,21 @@ object Main {
   }
 
   def createCard(phrase: DailyGermanPhrase): Unit = {
-    val words = clozeWordsVar.now().get(phrase.text).map(_.split(",").map(_.trim)).getOrElse(Array.empty[String])
-    val hints = hintsVar.now().get(phrase.text).map(_.split(",").map(_.trim)).getOrElse(Array.empty[String])
+    val words = clozeWordsVar
+      .now()
+      .get(phrase.text)
+      .map(_.split(",").map(_.trim))
+      .getOrElse(Array.empty[String])
+    val hints = hintsVar
+      .now()
+      .get(phrase.text)
+      .map(_.split(",").map(_.trim))
+      .getOrElse(Array.empty[String])
 
-    val clozes = words.zipAll(hints, "", "").map { case (word, hint) => Cloze(word, hint) }.toList
+    val clozes = words
+      .zipAll(hints, "", "")
+      .map { case (word, hint) => Cloze(word, hint) }
+      .toList
 
     val backend = FetchBackend()
     val response = basicRequest
@@ -52,21 +67,27 @@ object Main {
       .send(backend)
 
     response.onComplete {
-      case scala.util.Success(_) => dom.window.alert("Card created!")
+      case scala.util.Success(_)   => dom.window.alert("Card created!")
       case scala.util.Failure(err) => dom.console.log(err.getMessage)
     }
   }
 
   def createTextToAudioCard(): Unit = {
-    val clozeWords = textToAudioClozeWordsVar.now().split(",").map(_.trim).toList
+    val words =
+      textToAudioClozeWordsVar.now().split(",").map(_.trim).toList
+    val hints =
+      textToAudioClozeHintsVar.now().split(",").map(_.trim).toList
+    val clozes = words
+      .zipAll(hints, "", "")
+      .map { case (word, hint) => Cloze(word, hint) }
     val backend = FetchBackend()
     val response = basicRequest
       .post(uri"http://localhost:8080/api/text-to-audio/card")
-      .body(TextToAudioRequest(sentenceVar.now(), clozeWords).asJson.noSpaces)
+      .body(TextToAudioRequest(sentenceVar.now(), clozes).asJson.noSpaces)
       .send(backend)
 
     response.onComplete {
-      case scala.util.Success(_) => dom.window.alert("Card created!")
+      case scala.util.Success(_)   => dom.window.alert("Card created!")
       case scala.util.Failure(err) => dom.console.log(err.getMessage)
     }
   }
@@ -78,12 +99,13 @@ object Main {
         h2("Daily German"),
         div(
           input(
+            cls("card-input"),
             placeholder("Enter Daily German URL"),
             onInput.mapToValue --> urlVar,
             value <-- urlVar
-          ), 
+          ),
           br(),
-          br(),   
+          br(),
           button("Get Phrases", onClick --> (_ => getPhrases()))
         ),
         ul(
@@ -94,17 +116,21 @@ object Main {
                 input(
                   cls("card-input"),
                   placeholder("Enter cloze words (comma separated)"),
-                  onInput.mapToValue --> (s => clozeWordsVar.update(_ + (phrase.text -> s)))
+                  onInput.mapToValue --> (s =>
+                    clozeWordsVar.update(_ + (phrase.text -> s))
+                  )
                 ),
                 br(),
                 input( // New input for hints
                   cls("card-input"),
                   placeholder("Enter hints (comma separated)"),
-                  onInput.mapToValue --> (s => hintsVar.update(_ + (phrase.text -> s)))
-                ), 
-                  br(),
-                  br(),
-                  button("Create Card", onClick --> (_ => createCard(phrase)))
+                  onInput.mapToValue --> (s =>
+                    hintsVar.update(_ + (phrase.text -> s))
+                  )
+                ),
+                br(),
+                br(),
+                button("Create Card", onClick --> (_ => createCard(phrase)))
               )
             }
           }
@@ -114,18 +140,28 @@ object Main {
         h2("Text-to-Audio"),
         div(
           input(
+            cls("card-input"),
             placeholder("Enter sentence"),
             onInput.mapToValue --> sentenceVar,
             value <-- sentenceVar
           ),
-            br(),
+          br(),
+          br(),
           input(
+            cls("card-input"),
             placeholder("Enter cloze words (comma separated)"),
             onInput.mapToValue --> textToAudioClozeWordsVar,
             value <-- textToAudioClozeWordsVar
           ),
-            br(),
-            br(),
+          br(),
+          input( // New input for hints
+            cls("card-input"),
+            placeholder("Enter hints (comma separated)"),
+            onInput.mapToValue --> textToAudioClozeHintsVar,
+            value <-- textToAudioClozeHintsVar
+          ),
+          br(),
+          br(),
           button("Create Card", onClick --> (_ => createTextToAudioCard()))
         )
       )

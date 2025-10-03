@@ -28,21 +28,33 @@ object Main extends IOApp.Simple {
       for {
         dailyGermanUrl <- req.as[DailyGermanUrl]
         phrases <- IO(DailyGerman.getWebInfo(dailyGermanUrl.url))
-        resp <- Ok(phrases.map(p => DailyGermanPhrase(p.text, p.mp3Link)).asJson)
+        resp <- Ok(
+          phrases.map(p => DailyGermanPhrase(p.text, p.mp3Link)).asJson
+        )
       } yield resp
 
     case req @ POST -> Root / "daily-german" / "card" =>
       for {
         createCardRequest <- req.as[CreateAnkiCardRequest]
-        clozeText = createCardRequest.clozes.zipWithIndex.foldLeft(createCardRequest.phrase.text) { 
-          case (acc, (cloze, i)) => acc.replace(cloze.word, s"{{c1::${cloze.word}::${cloze.hint}}}")
+        clozeText = createCardRequest.clozes.zipWithIndex.foldLeft(
+          createCardRequest.phrase.text
+        ) { case (acc, (cloze, i)) =>
+          acc.replace(cloze.word, s"{{c1::${cloze.word}::${cloze.hint}}}")
         }
-        fileName = createCardRequest.phrase.mp3Link.substring(createCardRequest.phrase.mp3Link.lastIndexOf('/') + 1)
+        fileName = createCardRequest.phrase.mp3Link.substring(
+          createCardRequest.phrase.mp3Link.lastIndexOf('/') + 1
+        )
         note = AnkiApi.AnkiNoteInput(
           "German",
           "Cloze German",
           Map("Text" -> clozeText),
-          List(AnkiApi.AnkiAudioUrl(createCardRequest.phrase.mp3Link, fileName, List("Audio")))
+          List(
+            AnkiApi.AnkiAudioUrl(
+              createCardRequest.phrase.mp3Link,
+              fileName,
+              List("Audio")
+            )
+          )
         )
         _ <- IO(AnkiApi.addNote(note))
         resp <- Ok()
@@ -53,16 +65,26 @@ object Main extends IOApp.Simple {
     case req @ POST -> Root / "text-to-audio" / "card" =>
       for {
         textToAudioRequest <- req.as[TextToAudioRequest]
-        clozeText = textToAudioRequest.clozeWords.zipWithIndex.foldLeft(textToAudioRequest.sentence) {
-          case (acc, (word, i)) => acc.replace(word, s"{{c${i + 1}::${word}::}}")
+        clozeText = textToAudioRequest.clozeWords.zipWithIndex.foldLeft(
+          textToAudioRequest.sentence
+        ) { case (acc, (cloze, i)) =>
+          acc.replace(cloze.word, s"{{c1::${cloze.word}::${cloze.hint}}}")
         }
         fileName = java.util.UUID.randomUUID().toString
-        _ <- IO.fromFuture(IO(openIA.textToSpeech(fileName, textToAudioRequest.sentence)))
+        _ <- IO.fromFuture(
+          IO(openIA.textToSpeech(fileName, textToAudioRequest.sentence))
+        )
         note = AnkiApi.AnkiNoteInput(
           "German",
           "Cloze German",
           Map("Text" -> clozeText),
-          List(AnkiApi.AnkiAudioPath(s"/Users/petrm/IdeaProjects/germananki/$fileName.mp3", fileName, List("Audio")))
+          List(
+            AnkiApi.AnkiAudioPath(
+              s"/home/petrm/Development/Scala/germananki/$fileName.mp3",
+              fileName,
+              List("Audio")
+            )
+          )
         )
         _ <- IO(AnkiApi.addNote(note))
         resp <- Ok()
@@ -71,8 +93,11 @@ object Main extends IOApp.Simple {
 
   val apiRoutes = dailyGermanRoutes <+> textToAudioRoutes
 
-  val staticContentService = fileService[IO](FileService.Config("./js/src/main/resources"))
-  val jsService = fileService[IO](FileService.Config("./js/target/scala-3.3.1"))
+  val staticContentService =
+    fileService[IO](FileService.Config("./js/src/main/resources"))
+  val jsService = fileService[IO](
+    FileService.Config("./js/target/scala-3.3.6/germananki-js-fastopt")
+  )
 
   val httpApp = Router(
     "/api" -> apiRoutes,

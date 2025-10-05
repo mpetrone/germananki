@@ -23,6 +23,7 @@ object Main {
   val sentenceVar: Var[String] = Var("")
   val textToAudioClozeWordsVar: Var[String] = Var("")
   val textToAudioClozeHintsVar: Var[String] = Var("")
+  val activeTabVar: Var[String] = Var("daily-german")
 
   def getPhrases(): Unit = {
     val backend = FetchBackend()
@@ -96,75 +97,92 @@ object Main {
     div(
       h1("GermanAnki"),
       div(
-        h2("Daily German"),
-        div(
-          input(
-            cls("card-input"),
-            placeholder("Enter Daily German URL"),
-            onInput.mapToValue --> urlVar,
-            value <-- urlVar
-          ),
-          br(),
-          br(),
-          button("Get Phrases", onClick --> (_ => getPhrases()))
+        cls("tabs"),
+        button(
+          "Daily German",
+          cls <-- activeTabVar.signal.map(tab => if (tab == "daily-german") "tab active" else "tab"),
+          onClick --> (_ => activeTabVar.set("daily-german"))
         ),
-        ul(
-          children <-- phrasesVar.signal.map { phrases =>
-            phrases.map { phrase =>
-              li(
-                p(phrase.text),
-                input(
-                  cls("card-input"),
-                  placeholder("Enter cloze words (comma separated)"),
-                  onInput.mapToValue --> (s =>
-                    clozeWordsVar.update(_ + (phrase.text -> s))
-                  )
-                ),
-                br(),
-                input( // New input for hints
-                  cls("card-input"),
-                  placeholder("Enter hints (comma separated)"),
-                  onInput.mapToValue --> (s =>
-                    hintsVar.update(_ + (phrase.text -> s))
-                  )
-                ),
-                br(),
-                br(),
-                button("Create Card", onClick --> (_ => createCard(phrase)))
-              )
-            }
-          }
+        button(
+          "Text-to-Audio",
+          cls <-- activeTabVar.signal.map(tab => if (tab == "text-to-audio") "tab active" else "tab"),
+          onClick --> (_ => activeTabVar.set("text-to-audio"))
         )
       ),
-      div(
-        h2("Text-to-Audio"),
-        div(
-          input(
-            cls("card-input"),
-            placeholder("Enter sentence"),
-            onInput.mapToValue --> sentenceVar,
-            value <-- sentenceVar
-          ),
-          br(),
-          br(),
-          input(
-            cls("card-input"),
-            placeholder("Enter cloze words (comma separated)"),
-            onInput.mapToValue --> textToAudioClozeWordsVar,
-            value <-- textToAudioClozeWordsVar
-          ),
-          br(),
-          input( // New input for hints
-            cls("card-input"),
-            placeholder("Enter hints (comma separated)"),
-            onInput.mapToValue --> textToAudioClozeHintsVar,
-            value <-- textToAudioClozeHintsVar
-          ),
-          br(),
-          br(),
-          button("Create Card", onClick --> (_ => createTextToAudioCard()))
-        )
-      )
+      child <-- activeTabVar.signal.map {
+        case "daily-german" =>
+          div(
+            h2("Daily German"),
+            div(
+              input(
+                cls("card-input"),
+                placeholder("Enter Daily German URL"),
+                onInput.mapToValue --> urlVar,
+                value <-- urlVar
+              ),
+              br(),
+              br(),
+              button("Get Phrases", onClick --> (_ => getPhrases()))
+            ),
+            ul(
+              children <-- phrasesVar.signal.map { phrases =>
+                phrases.map { phrase =>
+                  li(
+                    p(phrase.text),
+                    input(
+                      cls("card-input"),
+                      placeholder("Enter cloze words (comma separated)"),
+                      onInput.mapToValue --> (s =>
+                        clozeWordsVar.update(_ + (phrase.text -> s))
+                      )
+                    ),
+                    br(),
+                    input( // New input for hints
+                      cls("card-input"),
+                      placeholder("Enter hints (comma separated)"),
+                      onInput.mapToValue --> (s =>
+                        hintsVar.update(_ + (phrase.text -> s))
+                      )
+                    ),
+                    br(),
+                    br(),
+                    button("Create Card", onClick --> (_ => createCard(phrase)))
+                  )
+                }
+              }
+            )
+          )
+        case "text-to-audio" =>
+          div(
+            h2("Text-to-Audio"),
+            div(
+              input(
+                cls("card-input"),
+                placeholder("Enter sentence"),
+                onInput.mapToValue --> sentenceVar,
+                value <-- sentenceVar
+              ),
+              br(),
+              br(),
+              input(
+                cls("card-input"),
+                placeholder("Enter cloze words (comma separated)"),
+                onInput.mapToValue --> textToAudioClozeWordsVar,
+                value <-- textToAudioClozeWordsVar
+              ),
+              br(),
+              input( // New input for hints
+                cls("card-input"),
+                placeholder("Enter hints (comma separated)"),
+                onInput.mapToValue --> textToAudioClozeHintsVar,
+                value <-- textToAudioClozeHintsVar
+              ),
+              br(),
+              br(),
+              button("Create Card", onClick --> (_ => createTextToAudioCard()))
+            )
+          )
+      }
     )
   }
 

@@ -12,12 +12,13 @@ import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import scala.util.Random
 import io.cequence.openaiscala.domain.settings.VoiceType._
+import io.github.cdimascio.dotenv.Dotenv
 
-val API_KEY =
-  ""
 class OpenIA() {
 
-  val logger: Logger = LoggerFactory.getLogger(this.getClass)
+  private val dotenv: Dotenv = Dotenv.load()
+  private val API_KEY: String = dotenv.get("OPENAI_API_KEY")
+  private val logger: Logger = LoggerFactory.getLogger(this.getClass)
   given ec: ExecutionContext = ExecutionContext.global
   given materializer: Materializer = Materializer(ActorSystem())
   private val rawService = OpenAIServiceFactory(apiKey = API_KEY, orgId = None)
@@ -39,7 +40,7 @@ class OpenIA() {
     }
   }
 
-  def buildSettings(): CreateSpeechSettings = {
+  private def buildSettings(): CreateSpeechSettings = {
     Random.between(0, 6) match {
       case 0 => CreateSpeechSettings("tts-1", alloy, Some(mp3), None)
       case 1 => CreateSpeechSettings("tts-1", echo, Some(mp3), None)

@@ -16,20 +16,21 @@ lazy val jvm = project
     name := "germananki-jvm",
     version := "0.1.0-SNAPSHOT",
     scalaVersion := scala3Version,
-    libraryDependencies ++= Seq(
-      "net.ruippeixotog" %% "scala-scraper" % "3.2.0",
-      "com.softwaremill.sttp.client4" %% "circe" % "4.0.9",
-      "com.softwaremill.sttp.client4" %% "upickle" % "4.0.9",
-      "io.cequence" %% "openai-scala-client" % "1.2.0",
-      "ch.qos.logback" % "logback-classic" % "1.5.13",
-      "org.http4s" %% "http4s-ember-server" % "1.0.0-M40",
-      "org.http4s" %% "http4s-ember-client" % "1.0.0-M40",
-      "org.http4s" %% "http4s-dsl" % "1.0.0-M40",
-      "org.http4s" %% "http4s-circe" % "1.0.0-M40",
-      "io.circe" %% "circe-generic" % "0.14.6",
-      "org.typelevel" %% "log4cats-noop" % "2.6.0",
-      "co.fs2" %% "fs2-io" % "3.9.4"
-    )
+     libraryDependencies ++= Seq(
+       "net.ruippeixotog" %% "scala-scraper" % "3.2.0",
+       "com.softwaremill.sttp.client4" %% "circe" % "4.0.9",
+       "com.softwaremill.sttp.client4" %% "upickle" % "4.0.9",
+       "io.cequence" %% "openai-scala-client" % "1.2.0",
+       "ch.qos.logback" % "logback-classic" % "1.5.13",
+       "org.http4s" %% "http4s-ember-server" % "1.0.0-M40",
+       "org.http4s" %% "http4s-ember-client" % "1.0.0-M40",
+       "org.http4s" %% "http4s-dsl" % "1.0.0-M40",
+       "org.http4s" %% "http4s-circe" % "1.0.0-M40",
+       "io.circe" %% "circe-generic" % "0.14.6",
+       "org.typelevel" %% "log4cats-noop" % "2.6.0",
+       "co.fs2" %% "fs2-io" % "3.9.4",
+       "io.github.cdimascio" % "java-dotenv" % "5.2.2"
+     )
   )
   .dependsOn(shared)
 

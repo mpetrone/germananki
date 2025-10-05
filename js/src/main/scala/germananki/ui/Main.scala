@@ -27,7 +27,7 @@ object Main {
   def getPhrases(): Unit = {
     val backend = FetchBackend()
     val response = basicRequest
-      .post(uri"http://localhost:8080/api/daily-german/phrases")
+      .post(uri"http://localhost:9000/api/daily-german/phrases")
       .body(DailyGermanUrl(urlVar.now()).asJson.noSpaces)
       .response(asJson[List[DailyGermanPhrase]])
       .send(backend)
@@ -62,7 +62,7 @@ object Main {
 
     val backend = FetchBackend()
     val response = basicRequest
-      .post(uri"http://localhost:8080/api/daily-german/card")
+      .post(uri"http://localhost:9000/api/daily-german/card")
       .body(CreateAnkiCardRequest(phrase, clozes).asJson.noSpaces)
       .send(backend)
 
@@ -82,7 +82,7 @@ object Main {
       .map { case (word, hint) => Cloze(word, hint) }
     val backend = FetchBackend()
     val response = basicRequest
-      .post(uri"http://localhost:8080/api/text-to-audio/card")
+      .post(uri"http://localhost:9000/api/text-to-audio/card")
       .body(TextToAudioRequest(sentenceVar.now(), clozes).asJson.noSpaces)
       .send(backend)
 

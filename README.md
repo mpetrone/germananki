@@ -9,16 +9,17 @@ The backend is implemented in the jvm subproject. To start it:
 
 sbt jvm/run
 
-This will start the HTTP server on http://localhost:8080.
+This will start the HTTP server on http://localhost:9000.
 
 3. Build the Frontend
 The frontend is implemented in the js subproject using Scala.js. To compile it:
 
+sbt js/fastOptJS
 
 This will generate the JavaScript file in main.js.
 
 4. Access the Application
-Open a browser and navigate to http://localhost:8080.
+Open a browser and navigate to http://localhost:9000.
 The static content (HTML and CSS) is served from resources, and the compiled JavaScript is served from germananki-js-fastopt.
 
 5. Optional: Watch for Changes

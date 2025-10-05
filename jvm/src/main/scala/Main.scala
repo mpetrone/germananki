@@ -109,7 +109,7 @@ object Main extends IOApp.Simple {
     EmberServerBuilder
       .default[IO]
       .withHost(ipv4"0.0.0.0")
-      .withPort(port"8080")
+      .withPort(port"9000")
       .withHttpApp(httpApp)
       .build
       .use(_ => IO.never)

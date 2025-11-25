@@ -2,6 +2,7 @@ import sttp.client4.*
 import sttp.client4.upicklejson.default._
 import sttp.model.Uri
 import upickle.default._
+import scala.concurrent.duration.*
 
 object AnkiApi {
   sealed trait AnkiAudio
@@ -36,14 +37,16 @@ object AnkiApi {
       .post(Uri.unsafeApply("localhost", 8765))
         .body(asJson(AnkiConnectRequest(action = "addNote", version = 6, params = Map("note" -> note))))
         .response(asString)
+        .readTimeout(10.seconds)
     val response = request.send(backend)
-    response.body match
+    response.body match {
       case Left(error) => println(s"Error while creating the note: $error")
       case Right(result) =>
         if(!result.contains(""""error": null"""))
           println(s"Error return from Anki-connect: $result")
         else
-          println("Anki note created successfully")  
+          println("Anki note created successfully")
+    }
   }
 
   def updateNote(note: AnkiUpdateNote): Unit = {
@@ -51,13 +54,15 @@ object AnkiApi {
       .post(Uri.unsafeApply("localhost", 8765))
       .body(asJson(AnkiConnectRequest(action = "updateNote", version = 6, params = Map("note" -> note))))
       .response(asJson[AnkiConnectResponse[Option[String]]])
+      .readTimeout(10.seconds)
     val response = request.send(backend)
-    response.body match
-      case Left(error) => 
+    response.body match {
+      case Left(error) =>
         println(s"Error while updating the note: $error")
       case Right(AnkiConnectResponse(_, Some(error))) =>
           println(s"Error return from Anki-connect: $error")
       case Right(AnkiConnectResponse(_, _)) => ()
+    }
   }
 
   def findNotes(pattern: String): List[Long] = {
@@ -65,15 +70,17 @@ object AnkiApi {
       .post(Uri.unsafeApply("localhost", 8765))
       .body(asJson(AnkiConnectRequest(action = "findNotes", version = 6, params = Map("query" -> pattern))))
       .response(asJson[AnkiConnectResponse[List[Long]]])
+      .readTimeout(10.seconds)
     val response = request.send(backend)
-    response.body match
-      case Left(error) => 
+    response.body match {
+      case Left(error) =>
         println(s"Error while fiding notes: $error")
         List()
       case Right(AnkiConnectResponse(_, Some(error))) =>
           println(s"Error return from Anki-connect: $error")
           List()
       case Right(AnkiConnectResponse(list, _)) => list
+    }
   }
 
   def getNotesInfo(notesId: List[Long]): List[AnkiNoteInfo] = {
@@ -81,14 +88,16 @@ object AnkiApi {
       .post(Uri.unsafeApply("localhost", 8765))
       .body(asJson(AnkiConnectRequest(action = "notesInfo", version = 6, params = Map("notes" -> notesId))))
       .response(asJson[AnkiConnectResponse[List[AnkiNoteInfo]]])
+      .readTimeout(10.seconds)
     val response = request.send(backend)
-    response.body match
-      case Left(error) => 
+    response.body match {
+      case Left(error) =>
         println(s"Error while getting notes info: $error")
         List()
       case Right(AnkiConnectResponse(_, Some(error))) =>
           println(s"Error return from Anki-connect: $error")
           List()
       case Right(AnkiConnectResponse(list, _)) => list
+    }
   }
 }

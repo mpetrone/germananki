@@ -21,13 +21,16 @@ object Main extends IOApp.Simple {
 
   implicit val loggerFactory: LoggerFactory[IO] = NoOpFactory[IO]
 
+  // Load cached cookies on startup
+  DailyGerman.loadCachedCookies()
+
   val openIA = new OpenIA()
 
   val dailyGermanRoutes: HttpRoutes[IO] = HttpRoutes.of[IO] {
     case req @ POST -> Root / "daily-german" / "phrases" =>
       for {
         dailyGermanUrl <- req.as[DailyGermanUrl]
-        phrases <- IO(DailyGerman.getWebInfo(dailyGermanUrl.url))
+        phrases <- IO.blocking(DailyGerman.getWebInfo(dailyGermanUrl.url))
         resp <- Ok(
           phrases.map(p => DailyGermanPhrase(p.text, p.mp3Link)).asJson
         )
@@ -56,7 +59,7 @@ object Main extends IOApp.Simple {
             )
           )
         )
-        _ <- IO(AnkiApi.addNote(note))
+        _ <- IO.blocking(AnkiApi.addNote(note))
         resp <- Ok()
       } yield resp
   }
@@ -86,7 +89,7 @@ object Main extends IOApp.Simple {
             )
           )
         )
-        _ <- IO(AnkiApi.addNote(note))
+        _ <- IO.blocking(AnkiApi.addNote(note))
         resp <- Ok()
       } yield resp
   }

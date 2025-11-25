@@ -33,3 +33,6 @@ metals.sbt
 
 # Environment variables
 .env
+
+# Session cookies
+.dailygerman_cookies

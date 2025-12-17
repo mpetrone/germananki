@@ -39,11 +39,14 @@ object Main extends IOApp.Simple {
     case req @ POST -> Root / "daily-german" / "card" =>
       for {
         createCardRequest <- req.as[CreateAnkiCardRequest]
+        _ <- IO(println(s"Creating card for phrase: ${createCardRequest.phrase.text}"))
+        _ <- IO(println(s"Clozes: ${createCardRequest.clozes}"))
         clozeText = createCardRequest.clozes.zipWithIndex.foldLeft(
           createCardRequest.phrase.text
         ) { case (acc, (cloze, i)) =>
           acc.replace(cloze.word, s"{{c1::${cloze.word}::${cloze.hint}}}")
         }
+        _ <- IO(println(s"Cloze text generated: $clozeText"))
         fileName = createCardRequest.phrase.mp3Link.substring(
           createCardRequest.phrase.mp3Link.lastIndexOf('/') + 1
         )
@@ -59,7 +62,13 @@ object Main extends IOApp.Simple {
             )
           )
         )
-        _ <- IO.blocking(AnkiApi.addNote(note))
+        _ <- IO(println(s"Sending note to AnkiConnect..."))
+        _ <- IO.blocking(AnkiApi.addNote(note)).handleErrorWith { ex =>
+          IO(println(s"ERROR creating Anki card: ${ex.getMessage}")) *>
+          IO(ex.printStackTrace()) *>
+          IO.raiseError(ex)
+        }
+        _ <- IO(println(s"Card created successfully"))
         resp <- Ok()
       } yield resp
   }

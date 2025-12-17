@@ -40,12 +40,16 @@ object AnkiApi {
         .readTimeout(10.seconds)
     val response = request.send(backend)
     response.body match {
-      case Left(error) => println(s"Error while creating the note: $error")
+      case Left(error) =>
+        println(s"Error while creating the note: $error")
+        throw new RuntimeException(s"Failed to connect to AnkiConnect: $error")
       case Right(result) =>
-        if(!result.contains(""""error": null"""))
+        if(!result.contains(""""error": null""")) {
           println(s"Error return from Anki-connect: $result")
-        else
+          throw new RuntimeException(s"AnkiConnect returned error: $result")
+        } else {
           println("Anki note created successfully")
+        }
     }
   }
 

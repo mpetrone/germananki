@@ -118,6 +118,11 @@ object Main extends IOApp.Simple {
     note.fields.values.exists(_.value.contains("[sound:"))
   }
 
+  // Check if a note is a reverse card (has "Reverse" in Extra field)
+  def isReverseCard(note: AnkiApi.AnkiNoteInfo): Boolean = {
+    note.fields.get("Extra").exists(_.value.contains("Reverse"))
+  }
+
   val audioToClozeRoutes: HttpRoutes[IO] = HttpRoutes.of[IO] {
     // GET /api/audio-to-cloze/cards - Fetch all cards without audio
     case GET -> Root / "audio-to-cloze" / "cards" =>
@@ -125,7 +130,7 @@ object Main extends IOApp.Simple {
         noteIds <- IO.blocking(AnkiApi.findNotes("deck:German note:\"Cloze German\""))
         notesInfo <- IO.blocking(AnkiApi.getNotesInfo(noteIds))
         cardsWithoutAudio = notesInfo.filter { note =>
-          !noteHasAudio(note)
+          !noteHasAudio(note) && !isReverseCard(note)
         }.map { note =>
           val textField = note.fields.get("Text").map(_.value).getOrElse("")
           val plainText = extractPlainTextFromCloze(textField)

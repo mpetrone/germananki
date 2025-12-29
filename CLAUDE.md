@@ -400,7 +400,6 @@ Staged changes:
 
 ## References
 
-- [REQUIREMENTS.md](./REQUIREMENTS.md) - Original project requirements
 - [README.md](./README.md) - Setup and run instructions
 - [AnkiConnect](https://foosoft.net/projects/anki-connect/) - Anki API documentation
 - [Laminar](https://laminar.dev/) - Reactive UI framework documentation

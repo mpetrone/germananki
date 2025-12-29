@@ -103,7 +103,66 @@ object Main extends IOApp.Simple {
       } yield resp
   }
 
-  val apiRoutes = dailyGermanRoutes <+> textToAudioRoutes
+  // Helper function to extract plain text from cloze format
+  def extractPlainTextFromCloze(clozeText: String): String = {
+    // First remove [sound:...] tags
+    val soundPattern = """\[sound:[^\]]+\]""".r
+    val withoutSound = soundPattern.replaceAllIn(clozeText, "")
+    // Then remove cloze patterns {{c1::word}} or {{c1::word::hint}}
+    val clozePattern = """\{\{c\d+::(.*?)(?:::[^}]*)?\}\}""".r
+    clozePattern.replaceAllIn(withoutSound, m => m.group(1))
+  }
+
+  // Check if a note has audio in any field
+  def noteHasAudio(note: AnkiApi.AnkiNoteInfo): Boolean = {
+    note.fields.values.exists(_.value.contains("[sound:"))
+  }
+
+  val audioToClozeRoutes: HttpRoutes[IO] = HttpRoutes.of[IO] {
+    // GET /api/audio-to-cloze/cards - Fetch all cards without audio
+    case GET -> Root / "audio-to-cloze" / "cards" =>
+      for {
+        noteIds <- IO.blocking(AnkiApi.findNotes("deck:German note:\"Cloze German\""))
+        notesInfo <- IO.blocking(AnkiApi.getNotesInfo(noteIds))
+        cardsWithoutAudio = notesInfo.filter { note =>
+          !noteHasAudio(note)
+        }.map { note =>
+          val textField = note.fields.get("Text").map(_.value).getOrElse("")
+          val plainText = extractPlainTextFromCloze(textField)
+          CardWithoutAudio(note.noteId, textField, plainText)
+        }
+        resp <- Ok(CardsWithoutAudioResponse(cardsWithoutAudio).asJson)
+      } yield resp
+
+    // POST /api/audio-to-cloze/generate - Generate audio for selected cards
+    case req @ POST -> Root / "audio-to-cloze" / "generate" =>
+      for {
+        request <- req.as[GenerateAudioRequest]
+        notesInfo <- IO.blocking(AnkiApi.getNotesInfo(request.noteIds))
+        results <- notesInfo.traverse { note =>
+          val textField = note.fields.get("Text").map(_.value).getOrElse("")
+          val plainText = extractPlainTextFromCloze(textField)
+          val fileName = java.util.UUID.randomUUID().toString
+          val audioPath = s"/Users/matias.petrone/IdeaProjects/germananki/$fileName.mp3"
+
+          (for {
+            _ <- IO.fromFuture(IO(openIA.textToSpeech(fileName, plainText)))
+            updateNote = AnkiApi.AnkiUpdateNote(
+              id = note.noteId,
+              tags = note.tags,
+              fields = Map.empty,
+              audio = List(AnkiApi.AnkiAudioPath(audioPath, s"$fileName.mp3", List("Audio")))
+            )
+            _ <- IO.blocking(AnkiApi.updateNote(updateNote))
+          } yield true).handleError(_ => false)
+        }
+        processed = results.count(_ == true)
+        failed = results.count(_ == false)
+        resp <- Ok(GenerateAudioResponse(processed, failed).asJson)
+      } yield resp
+  }
+
+  val apiRoutes = dailyGermanRoutes <+> textToAudioRoutes <+> audioToClozeRoutes
 
   val staticContentService =
     fileService[IO](FileService.Config("./js/src/main/resources"))

@@ -78,7 +78,7 @@ object AnkiApi {
     val response = request.send(backend)
     response.body match {
       case Left(error) =>
-        println(s"Error while fiding notes: $error")
+        println(s"Error while finding notes: $error")
         List()
       case Right(AnkiConnectResponse(_, Some(error))) =>
           println(s"Error return from Anki-connect: $error")

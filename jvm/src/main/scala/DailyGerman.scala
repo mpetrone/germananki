@@ -1,17 +1,16 @@
-import net.ruippeixotog.scalascraper.browser.{Browser, JsoupBrowser}
+import ch.qos.logback.classic.{Level, LoggerContext}
+import io.github.cdimascio.dotenv.Dotenv
+import net.ruippeixotog.scalascraper.browser.JsoupBrowser
 import net.ruippeixotog.scalascraper.dsl.DSL.*
 import net.ruippeixotog.scalascraper.dsl.DSL.Extract.*
-
-import scala.io.StdIn.readLine
-import io.github.cdimascio.dotenv.Dotenv
-import ch.qos.logback.classic.LoggerContext
-import ch.qos.logback.classic.Level
-import org.slf4j.{Logger, LoggerFactory}
+import org.slf4j.LoggerFactory
 import sttp.client4.*
-import sttp.model.{Header, HeaderNames, StatusCode}
+import sttp.model.HeaderNames
+
 import java.nio.file.{Files, Paths}
-import scala.util.{Try, Success, Failure}
 import scala.concurrent.duration.*
+import scala.io.StdIn.readLine
+import scala.util.{Failure, Success, Try}
 
 object DailyGerman {
 
